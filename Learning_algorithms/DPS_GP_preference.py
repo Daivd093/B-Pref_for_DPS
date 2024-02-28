@@ -145,6 +145,8 @@ def DPS_GP_preference(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
     """
     Here is where the learning algorithm begins.
     """
+    Skipped = 0
+    Ties = 0
     for iteration in range(num_iter):
         
         # Print status:
@@ -211,6 +213,12 @@ def DPS_GP_preference(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
         # there can be a tie between two trajectories. In this case, we skip 
         # updating the reward posterior):
         if preference == 0.5:
+            print("--------------\nTie\n--------------")
+            Ties += 1
+            continue       
+        if preference == np.nan:
+            print("--------------\nSkipped\n--------------")
+            Skipped += 1
             continue
 
         # Store the difference in state/action visitation counts for the 2 
@@ -233,7 +241,9 @@ def DPS_GP_preference(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
         GP_model = feedback_GP_preference(observation_matrix, GP_prior_cov_inv, 
                                           preference_noise)
     
-    # Return performance results:
+    print(f"There were {Ties} Ties and {Skipped} Skipped Queries")
+    
+    # Return performance results:    
     return rewards
 
 

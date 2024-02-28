@@ -5,10 +5,19 @@ linear regression credit assignment.
 """
 
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict # Es un diccionario en el que si uno trata 
+# de acceder a una llave que no existe, esta será inicializada automáticamente 
+# con un valor previamente determinado por el usuario.
+# Básicamente un diccionario que no va a hacer que el programa se detenga por 
+# un error si uno trata de acceder con una llave que no existe.
 
 from Learning_algorithms.DPS_helper_functions import advance, get_state_action_visit_counts
+# Advance muestrea i veces las distribuciones de probabilidad de los modelos de
+# dinámicas y recompensas y genera una política óptima para cada MDP generado 
+# por este muestreo.
 
+# Get_state_action_visit_counts simplemente recorre una trayectoria y cuenta la
+# cantidad de veces que cada par [estado, acción] existente fue visitado.
 
 def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1, 
             run_str = '', seed = None):
@@ -40,13 +49,14 @@ def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
              rewards at every step taken in the environment (the environment
              determines whether a) or b) is used).
     """
+
     
     # Unpack hyperparameters:
-    lambd = hyper_params[1]    # Only the lambda hyperparameter is needed for
+    lambd = hyper_params[1]    # Only the lambda hyperparameter is needed 
                                # for initializing the prior
     
     if not seed is None:
-        np.random.seed(seed)
+        np.random.seed(seed) # Si se recibió una semilla, se usa.
 
     # Numbers of states and actions in the environment:
     num_states = env.nS
@@ -63,6 +73,10 @@ def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
     
     # Initially, reward model is just the prior, since we don't have any data.   
     LR_model = {'mean': prior_mean, 'cov_evecs': evecs, 'cov_evals': evals}
+    # El modelo inicial para las recompensas tiene media 0 para cada combinación
+    # [estado, acción], la matriz de autovectores es la identidad y los valores
+    # propios son 1/lambda para cada combinación.
+    
     
     # Dirichlet model posterior over state/action transition probabilities.
     # Initially, this is set to the Dirichlet prior, and it's updated after
@@ -72,13 +86,24 @@ def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
     # Setting diri_prior = 1 gives a uniform prior over transition probabilities.
     dirichlet_posterior = defaultdict(lambda: defaultdict(lambda: \
                                             diri_prior * np.ones(num_states)))
+    # dirichlet_posterior[estado][acción] es un arreglo de largo num_states con
+    # los parámetros que definen la distribución de dirichlet de las que luego 
+    # ADVANCE va a tomar una muestra para las definir las dinámicas del MDP que
+    # tratará de solucionar.
+    # Al inicializarlo, este partirá dando igual importancia a todos los estados.
+    # Conforme el algoritmo va aprendiendo, le aumentará la importancia a algún
+    # estado por sobre otro, diciendo que es más probable ir a pasar a algún estado
+    # específico con la combinación estado-acción que estamos realizando.
 
     # For each trajectory pair, store difference between how many times each 
     # state/action pair is visited:
-    observation_matrix = np.empty((0, num_sa_pairs))
+    observation_matrix = np.empty((0, num_sa_pairs)) 
+    # Inicializa una matriz vacía a la que solamente se le pueden agregar, verticalmente,
+    # filas de largo num_sa_pairs
     
     # Preference labels corresponding to the observations:
     preference_labels = np.empty((0, 1))
+    # Inicializa un vector columna vacío. Solo se le pueden agregar valores escalares verticalmente.
 
     num_policies = 2     # Number of policies to sample per learning iteration
     
@@ -94,7 +119,10 @@ def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
     """
     Here is where the learning algorithm begins.
     """
-    for iteration in range(num_iter):
+    # Not sure if I will use this or not, but
+    Skipped = 0
+    Ties = 0
+    for iteration in range(num_iter): # num_iter es la cantidad de consultas que hará el algoritmo.
         
         # Print status:
         print('Bayesian linear regression, parameters %s: iteration = %i' % \
@@ -118,8 +146,13 @@ def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
                 
                 action = np.random.choice(num_actions, p = policy[t, state, :])
                 
-                next_state, done = env.step(action)
+                next_state, done = env.step(action) # Si se utiliza el algoritmo para aprender otras tareas puede ser que esta línea arroje errores.
                 
+                # Como estamos trabajando en régimen basado en preferencias, 
+                # env.step solamente entregará 2 cosas.
+                # El siguiente estado y si llegó al final del proceso o no.
+                
+
                 state_sequence[t] = state
                 action_sequence[t] = action
 
@@ -132,17 +165,22 @@ def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
 
                 # Terminate trajectory if environment turns on "done" flag.
                 if done:
-                    state_sequence = state_sequence[: t + 2]
-                    action_sequence = action_sequence[: t + 1]
+                    state_sequence = state_sequence[: t + 2] # Si terminamos antes de lo esperado, dejamos espacio para el estado al que se llegó y eliminamos los espacios que quedaron.
+                    action_sequence = action_sequence[: t + 1] # La misma idea, pero sin dejar un espacio para una "próxima acción".
                     
                     break
                 
                 # Update state transition posterior:
                 dirichlet_posterior[state][action][next_state] += 1
+                # Ya sabemos que desde [state], haciendo [action] es posible llegar a [next_state] en el MDP real.
+                # Por lo tanto, actualizamos los parámetros de la distribución 
+                # de Dirichlet para que sea más probable llegar desde [state,action]
+                # a [next_state], haciendo que el próximo MDP muestreado se parezca más
+                # al MDP en env, al MDP real.
 
                 state = next_state                    
             
-            state_sequence[-1] = next_state
+            state_sequence[-1] = next_state # Guardamos el estado final.
             trajectories.append([state_sequence, action_sequence]) 
 
             # Tracking rewards for evaluation purposes (in case of tracking
@@ -160,8 +198,24 @@ def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
         # there can be a tie between two trajectories. In this case, we skip 
         # updating the reward posterior):
         if preference == 0.5:
+            print("--------------\nTie\n--------------")
+            Ties += 1
+            continue       
+        if preference == np.nan:
+            print("--------------\nSkipped\n--------------")
+            Skipped += 1
             continue
-
+        
+        # Si se nos informa un empate, saltamos a la siguiente iteración de DPS
+        # se obtienen otras 2 políticas y se hace una nueva consulta.
+        # Podría hacerse una modificación para que, si ha habido muchos empates,
+        # la próxima política sea generada con epsilon mayor a cero, fomentando
+        # la exploración.
+        
+        # Si se informa que la consulta será saltada también se pasa a la siguiente
+        # iteración.
+        
+        
         # Store the difference in state/action visitation counts for the 2 
         # trajectories:
         visitations = []
@@ -177,6 +231,17 @@ def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
             
         observation_matrix = np.vstack((observation_matrix, visitation_diff))
         
+        # La matriz de observaciones contiene en cada fila la diferencia entre
+        # los pares [estado,acción] visitados por las trayectorias que fueron
+        # presentados en una misma iteración.
+        
+        # observation_matrix[t][num_actions * s + a] es la canditad de veces que 
+        # el par estado-acción [s,a] fue visitado por la segunda trayectoria
+        # menos la cantidad de veces que fue visitado por la primera en la
+        # t-ésima consulta.
+               
+        
+        
         # Store preference information. Preference gets mapped to 0.5 if 
         # 2nd trajectory is preferred, and -0.5 otherwise.
         preference_labels = np.vstack((preference_labels, 
@@ -186,6 +251,8 @@ def DPS_lin_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
         # performing credit assignment via Bayesian linear regression:
         LR_model = feedback_linear(hyper_params, observation_matrix, 
                                    preference_labels)
+
+    print(f"There were {Ties} Ties and {Skipped} Skipped Queries")
         
     # Return performance results:
     return rewards
@@ -238,4 +305,6 @@ def feedback_linear(LR_prior_params, observation_matrix, preference_labels):
 
     # Return the model posterior:
     return {'mean': post_mean, 'cov_evecs': evecs, 'cov_evals': evals}
+
+    # Esto implementa, más o menos, lo que aparece en la sección 4.1 del paper
 

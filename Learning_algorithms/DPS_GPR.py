@@ -55,7 +55,10 @@ def DPS_GPR(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
     [kernel_variance, kernel_lengthscales, kernel_noise] = hyper_params
     
     if not seed is None:
-        np.random.seed(seed)
+        np.random.seed(seed)    # Si la semilla es entregada, se usará como base
+                                # para el generador de números aleatorios.
+                                # Los números aleatorios son utilizados por la 
+                                # máquina para sacar muestras de las distribuciones.
 
     # Numbers of states and actions in the environment:
     num_states = env.nS
@@ -74,10 +77,13 @@ def DPS_GPR(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
     ranges = []
     for i in range(len(states_per_dim)):
         ranges.append(np.arange(states_per_dim[i]))
-
+    # Esta versión tiene soporte para estados de más de 1 dimensión. 
     ranges.append(np.arange(num_actions))
 
     state_action_map = list(itertools.product(*ranges))
+    # Esta línea genera una lista de tuplas con todas las combinaciones posibles para
+    #(s1,s2,...,sn,a), donde (s1,s2,...,sn) es cada estado n-dimensional.
+    
     
     # If kernel_lengthscales is a scalar, we convert it to a vector as described
     # in input 4) in the large comment at the top of this function.
@@ -145,6 +151,8 @@ def DPS_GPR(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
     """
     Here is where the learning algorithm begins.
     """
+    Skipped = 0
+    Ties = 0
     for iteration in range(num_iter):
         
         # Print status:
@@ -210,6 +218,12 @@ def DPS_GPR(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
         # there can be a tie between two trajectories. In this case, we skip 
         # updating the reward posterior):
         if preference == 0.5:
+            print("--------------\nTie\n--------------")
+            Ties += 1
+            continue       
+        if preference == np.nan:
+            print("--------------\nSkipped\n--------------")
+            Skipped += 1
             continue
 
         # Store state/action visitation counts for the 2 trajectories:
@@ -227,6 +241,8 @@ def DPS_GPR(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
         # Call feedback function to update the reward model posterior by
         # performing credit assignment via Gaussian process regression:
         GP_model = feedback_GPR(GP_prior, observation_matrix, preference_labels)
+    
+    print(f"There were {Ties} Ties and {Skipped} Skipped Queries")
     
     # Return performance results:
     return rewards

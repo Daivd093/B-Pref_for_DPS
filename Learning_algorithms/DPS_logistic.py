@@ -99,6 +99,8 @@ def DPS_log_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
     """
     Here is where the learning algorithm begins.
     """
+    Skipped = 0
+    Ties = 0
     for iteration in range(num_iter):
         
         # Print status:
@@ -165,6 +167,12 @@ def DPS_log_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
         # there can be a tie between two trajectories. In this case, we skip 
         # updating the reward posterior):
         if preference == 0.5:
+            print("--------------\nTie\n--------------")
+            Ties += 1
+            continue       
+        if preference == np.nan:
+            print("--------------\nSkipped\n--------------")
+            Skipped += 1
             continue
 
         # Store the difference in state/action visitation counts for the 2 
@@ -191,7 +199,9 @@ def DPS_log_reg(time_horizon, hyper_params, env, num_iter, diri_prior = 1,
         # performing credit assignment via Bayesian logistic regression:
         LR_model = feedback_logistic(LR_prior_model, observation_matrix, 
                             preference_labels, cov_scale)
-        
+      
+    print(f"There were {Ties} Ties and {Skipped} Skipped Queries")
+
     # Return performance results:
     return rewards
 
