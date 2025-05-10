@@ -2,16 +2,16 @@
 
 Este repositorio contiene una versión adaptada y extendida del código original de:
 
-**Dueling Posterior Sampling for Preference-Based Reinforcement Learning**
-*Conference on Uncertainty in Artificial Intelligence (UAI), 2020*
-Ellen Novoseller, Yibing Wei, Yanan Sui, Yisong Yue y Joel W. Burdick
+**Dueling Posterior Sampling for Preference-Based Reinforcement Learning**<br/>
+*Conference on Uncertainty in Artificial Intelligence (UAI), 2020*<br/>
+Ellen Novoseller, Yibing Wei, Yanan Sui, Yisong Yue y Joel W. Burdick<br/>
 [Paper DPS](https://arxiv.org/abs/1908.01289)
 
 Implementando un profesor simulado según las descripciones del benchmark:
 
-**B-Pref: Benchmarking Preference-Based Reinforcement Learning**
-*NeurIPS 2021 Datasets and Benchmarks Track*
-Kimin Lee, Laura Smith, Anca Dragan, Pieter Abbeel
+**B-Pref: Benchmarking Preference-Based Reinforcement Learning**<br/>
+*NeurIPS 2021 Datasets and Benchmarks Track*<br/>
+Kimin Lee, Laura Smith, Anca Dragan, Pieter Abbeel<br/>
 [Paper B-Pref] (https://openreview.net/pdf?id=ps95-mkHF_)
 
 ## Contenidos del Repositorio
