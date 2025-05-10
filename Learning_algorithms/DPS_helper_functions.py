@@ -8,8 +8,8 @@ import numpy as np
 
 import sys
 if "../" not in sys.path:
-  sys.path.append("../")
-from ValueIteration import value_iteration
+  sys.path.append("../") # Obtiene acceso a la carpeta superior (creo). Pero parece que está hecho para Linux.
+from ValueIteration import value_iteration # Algoritmo para obtener la política óptima y la función V(s) asociada (en realidad es al revés).
 
 
 def get_state_action_visit_counts(trajectory, num_states, num_actions):
@@ -46,7 +46,7 @@ def get_state_action_visit_counts(trajectory, num_states, num_actions):
         # Increment visit count for the state/action pair at this time step.
         visit_counts[num_actions * states[t] + actions[t]] += 1
 
-    return visit_counts.reshape((1,num_states * num_actions))
+    return visit_counts.reshape((1,num_states * num_actions)) # Lo entrega como vector fila.
 
 
 def advance(num_policies, dirichlet_posterior, reward_posterior, num_states, 
@@ -104,7 +104,16 @@ def advance(num_policies, dirichlet_posterior, reward_posterior, num_states,
         
                 dynamics_sample_.append(np.random.dirichlet(dirichlet_posterior[state][action]))
                 
+                # Lista a la que se le va agregando un valor obtenido de la distribución
+                # de Dirichlet para cada acción desde el estado state.
+                
             dynamics_sample.append(dynamics_sample_)
+            
+            # Por cada estado se va agregando la lista del muestreo de la dinámica
+            # para cada acción desde el estado que corresponda.
+        
+        
+
     
         # Sample rewards from the reward model posterior:
         mean = reward_posterior['mean']
@@ -113,12 +122,18 @@ def advance(num_policies, dirichlet_posterior, reward_posterior, num_states,
         R = mean + reward_posterior['cov_evecs'] @   \
                 np.diag(np.sqrt(reward_posterior['cov_evals'])) @ X
 
-        R = R.reshape([num_states, num_actions])
+        R = R.reshape([num_states, num_actions]) 
               
         # Value iteration to determine policy:             
         policies.append(value_iteration(dynamics_sample, R, num_states, 
-                                        num_actions, epsilon = 0, 
+                                        num_actions, epsilon = 0,  # Entrega una política determinística.
                                         H = time_horizon)[0])
-        
+        # La política i es la política óptima considerando el muestreo actual 
+        # de las dinámicas y la recompensa obtenida del muestreo de la distribución normal.
+
+    # Para la siguiente política se vuelven a muestrear las dinámicas desde la distribución de Dirichlet
+    # y las recompensas desde la distribución normal, obteniéndose probablemente 2 políticas óptimas 
+    # diferentes entre ellas, pues resuelven un MDP diferente.
+    
     return policies
 

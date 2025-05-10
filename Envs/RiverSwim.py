@@ -13,7 +13,7 @@ from gym.utils import seeding
 
 import numpy as np
 
-class RiverSwimEnv(gym.Env):
+class RiverSwimEnv(gym.Env): #RiverSwimEnv es una clase hija de gym.Env
     """
     This class defines the RiverSwim environment.
     """
@@ -25,9 +25,9 @@ class RiverSwimEnv(gym.Env):
         """
         
         # Initialize state and action spaces.
-        self.nA = 2     # Two actions: left and right
-        self.action_space = spaces.Discrete(self.nA)
-        self.observation_space = spaces.Discrete(num_states)
+        self.nA = 2     # Two actions: left and right # Por definición, en RiverSwim solo se puede ir a la izquierda o a la derecha, no haymás acciones posibles.
+        self.action_space = spaces.Discrete(self.nA) # A = {0,1} Espacio de acciones (izq, der)
+        self.observation_space = spaces.Discrete(num_states) # S = {0,1,2,3,4,5} Espacio de estados
         self.nS = num_states
         
         self.states_per_dim = [num_states]  # State space has only one dimension
@@ -40,34 +40,34 @@ class RiverSwimEnv(gym.Env):
 
         # Construct transition probability matrix and rewards. Format:
         # self.P[s][a] is a list of transition tuples (prob, next_state, reward).
-        self.P = {}
+        self.P = {} #Se inicializa como un diccionario vacío.
         
-        for s in range(self.nS):
+        for s in range(self.nS): # Para cada estado
             
-            self.P[s] = {a : [] for a in range(self.nA)}
+            self.P[s] = {a : [] for a in range(self.nA)} # Inicializa una lista vacía para ambas acciones en cada estado
             
             for a in range(self.nA):
                 
                 if a == 0:  # Left action
                     
-                    next_state = np.max([s - 1, 0])
+                    next_state = np.max([s - 1, 0]) # Si voy hacia la izquierda, el siguiente estado será s-1 ó 0, el que sea mayor.
                     
-                    reward = 5/1000 if (s == 0 and next_state == 0) else 0
+                    reward = 5/1000 if (s == 0 and next_state == 0) else 0 # Escogiendo ir a a la izquierda, si me quedo en el estado inicial, la recompensa será 5/1000. Si no estoy en el estado inicial o mi estado siguiente no es el inicio, si retrocedo, la recompensa es 0
                     
-                    self.P[s][a] = [(1, next_state, reward)]
+                    self.P[s][a] = [(1, next_state, reward)] # Si quiero ir a la izquierda, es un sistema determinístico.
                     
-                elif s == 0:  # Leftmost state, and right action
+                elif s == 0:  # Leftmost state, and right action # Trato de ir a la derecha desde el estado inicial.
                     
-                    self.P[s][a] = [(0.4, s, 0), (0.6, s + 1, 0)]
+                    self.P[s][a] = [(0.4, s, 0), (0.6, s + 1, 0)]   # Hay un 60% de probabilidad de que logre avanzar. Ya sea que lo logre o no, la recompensa será cero.
                     
                 elif s == self.nS - 1:   # Rightmost state, and right action
                     
-                    self.P[s][a] = [(0.4, s - 1, 0), (0.6, s, 1)]
+                    self.P[s][a] = [(0.4, s - 1, 0), (0.6, s, 1)] # Hay un 60% de probabilidad de que logre quedarme en el estado final. Si logro esto, la recompensa es 1. Si retrocedo, la recompensa es 0.
                     
                 else:   # Intermediate state, and right action
                     
                     self.P[s][a] = [(0.05, s - 1, 0), (0.6, s, 0), 
-                          (0.35, s + 1, 0)]
+                          (0.35, s + 1, 0)] # Si estoy en un estado intermedio y trato de avanzar a la izquierda, hay un 5% de probabilidad de retroceder, un 60% de quedarme en el lugar y un 35% de avanzar. Mientras no parta en el estado final, no importa lo que pase, mi recompensa será 0.
 
         # Reset the starting state:
         self.reset()
@@ -85,7 +85,7 @@ class RiverSwimEnv(gym.Env):
         self.state = 0
         return self.state
     
-    def step(self, action):
+    def step(self, action): # Define step, sobreescribiendo la función step de gym.Envs. 
         """
         Take a step using the transition probability matrix specified in the 
         constructor.
@@ -94,17 +94,19 @@ class RiverSwimEnv(gym.Env):
         """        
         transition_probs = self.P[self.state][action]
         
-        num_next_states = len(transition_probs)
+        num_next_states = len(transition_probs) # Número de siguientes estados posibles, según la distribución de probabilidad para el estado actual y la acción escogida.
 
-        next_state_probs = [transition_probs[i][0] for i in range(num_next_states)]
+        next_state_probs = [transition_probs[i][0] for i in range(num_next_states)] # La probabilidad de ir a parar a cada uno de esos siguientes estados posibles
             
-        outcome = np.random.choice(np.arange(num_next_states), p = next_state_probs)
+        outcome = np.random.choice(np.arange(num_next_states), p = next_state_probs) # Se escoge aleatoriamente un resultado según las probabilidades definidas. Avanzar, Quedarse, Retroceder (si estamos en un estado que soporta 3 estados siguientes posibles)
         
-        self.state = transition_probs[outcome][1]    # Update state
+        self.state = transition_probs[outcome][1]    # Update state # El estado al que se lle
         reward = transition_probs[outcome][2]
         
         return self.state, reward, self.done    # done = False always
-    
+        # Esta definición de step retorna el estado al que se llegó, la recompensa que se obtuvo e informa que aún no se termina.
+        # Por definición, done siempre será falso, pues la única forma de terminar el proceso es cuando se acabe el tiempo.
+        # El nadador quiere quedarse al final del río, contra la corriente, la mayor cantidad de tiempo posible, pero no puede simplemente llegar a un punto y decidir salir.
     
     def get_step_reward(self, state, action, next_state):
         """
@@ -150,7 +152,7 @@ class RiverSwimEnv(gym.Env):
 
          
       
-class RiverSwimPreferenceEnv(RiverSwimEnv):
+class RiverSwimPreferenceEnv(RiverSwimEnv): # No es una clase hija, la relación entre clases es más del tipo "tiene un" que "es un". Contiene un RiverSwimEnv y puede modificar o extender su comportamiento sin necesidad de heredar de ella.
     """
     This class is a wrapper for the RiverSwim environment, which gives
     preferences over trajectories instead of numerical rewards at each step.
@@ -160,6 +162,7 @@ class RiverSwimPreferenceEnv(RiverSwimEnv):
         2) We add a function that calculates a preference between 2 inputted
             trajectories.
     """
+    # Modifica RiverSwimEnv para poder utilizarlo en algoritmos basados en preferencias.
 
     def __init__(self, user_noise_model, num_states = 6):
         """
@@ -172,7 +175,7 @@ class RiverSwimPreferenceEnv(RiverSwimEnv):
         
         self.user_noise_model = user_noise_model
         
-        super().__init__(num_states)
+        super().__init__(num_states) # Esto lo está haciendo como si fuese una clase hija, está iniciando un RiverSwimEnv con los estados que le entregues al constructor de RiverSwimPreferenceEnv
 
     def step(self, action):
         """
@@ -182,6 +185,11 @@ class RiverSwimPreferenceEnv(RiverSwimEnv):
         """
         state, _, done = super().step(action)
         return state, done
+        # Dada la naturaleza del aprendizaje basado en preferencias, el método 
+        # step() de RiverSwimPreferenceEnv no entrega el valor de recompensa 
+        # asociado al paso actual, simplemente retorna el estado al que se 
+        # llega e informa si se ha terminado el episodio (En RiverSwimEnv este 
+        # valor es siempre False).
        
    
     def get_trajectory_preference(self, tr1, tr2):
@@ -216,7 +224,7 @@ class RiverSwimPreferenceEnv(RiverSwimEnv):
         assert (noise_type in [0,1,2]), "noise_type %i invalid" % noise_type
         
         trajectories = [tr1, tr2]
-        num_traj = len(trajectories)
+        num_traj = len(trajectories) # Siempre será 2.
         
         # For both trajectories, determine cumulative reward / total return:
         returns = np.empty(num_traj)
@@ -253,4 +261,5 @@ class RiverSwimPreferenceEnv(RiverSwimEnv):
             preference = np.random.choice([0, 1], p = [1 - prob, prob])                
         
         return preference
+
 

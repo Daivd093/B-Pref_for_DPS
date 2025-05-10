@@ -48,6 +48,22 @@ for user_noise in user_noise_params:
         # Run algorithm:
         rewards = DPS_lin_reg(time_horizon, hyper_params, env, num_iter, 
                           run_str = run_str)
+        # La salida de DPS_lin_reg() es un vector con las recompensas, reales,
+        # que fue obteniendo de parte del ambiente conforme avanzaba.
+        # Si el ambiente reporta sus recompensas por cada paso que da, es de 
+        # largo num_iter * time_horizon * num_policies, mientras para ambientes
+        # que informan recompensas sobre episodios completos, es de largo
+        # num_iter * num_policies.
+        
+        
+        # Estas recompensas no son las preferencias reportadas por el usuario, 
+        # son las recompensas reales de la función subyacente por haber realizado
+        # las trayectorias. Por eso el código decía que estas son guardadas
+        # solamente para propósitos de evaluación. Si se tratara de un problema
+        # real en que no tenemos una función subyacente escrita, esto no sería 
+        # algo que podemos obtener.
+        
+        
         
         # Save results from this algorithm run:
         

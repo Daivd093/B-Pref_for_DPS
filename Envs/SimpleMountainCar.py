@@ -22,6 +22,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
+
 import numpy as np
 import gym
 from gym import spaces
@@ -52,7 +53,7 @@ class SimpleMountainCarEnv(gym.Env):
         self.low = np.array([self.min_position, -self.max_speed])
         self.high = np.array([self.max_position, self.max_speed])
 
-        self.action_space = spaces.Discrete(3)
+        self.action_space = spaces.Discrete(3) # {ac izq, no ac, ac der}
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
         self.nA = self.action_space.n
 
@@ -88,7 +89,7 @@ class SimpleMountainCarEnv(gym.Env):
 
         # Check if agent reached the goal:
         if position >= self.goal_position:
-            self.done = True
+            self.done = True  # A diferencia de RiverSwimEnv, en este caso al llegar al objetivo se termina el experimento.
         else:
             self.done = False
 
@@ -100,7 +101,7 @@ class SimpleMountainCarEnv(gym.Env):
 
     def reset(self, start_state = None):
         """
-        Reset initial state, so that we can start a new episode. Starting spate 
+        Reset initial state, so that we can start a new episode. Starting state 
         is uniformly-randomly sampled from the complete state space.
         
         Input (optional): if start_state is passed in, then use this as the
@@ -201,11 +202,13 @@ class SimpleMountainCarDiscEnv(SimpleMountainCarEnv):
         # Convert to integer bins:
         num_dims = len(self.thresholds)
         state_bins = np.empty(num_dims)
-    
+        
         for i in range(num_dims):
     
             state_bins[i] = np.where(state[i] >= self.thresholds[i])[0][-1]
-    
+        # Esto entrega en qué intervalo nos encontramos para la posición y la velocidad.
+        # Un índice para posición y otro para velocidad.
+        
         # Convert to the state's scalar index:
         state_idx = 0
         prod = 1
@@ -214,6 +217,8 @@ class SimpleMountainCarDiscEnv(SimpleMountainCarEnv):
     
             state_idx += state_bins[i] * prod
             prod *= len(self.thresholds[i])
+            
+            # Esto entrega un índice único para el estado en total. Un índice que puede tomar valores de 0 a 99, pues hay 10 intervalos de posición y 10 de velocidad.
     
         return int(state_idx)
 

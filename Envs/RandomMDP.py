@@ -12,6 +12,9 @@ from gym.utils import seeding
 
 import numpy as np
 
+# Generalización de procesos de decisión Markovianos. Genera un MDP al azar.
+# Con las entradas adecuadas se puede RiverSwimEnv. 
+# Habría que hacer algunas modificaciones para poder generar SimpleMountainCarEnv.
 
 class RandomMDPEnv(gym.Env):
     """
@@ -215,7 +218,7 @@ class RandomMDPEnv(gym.Env):
             
             total_return += self.get_step_reward(states[i], actions[i], \
                                          states[i + 1])
-            
+            # El "\" indica que a pesar del salto de línea aún quedan cosas que pertenecen a la misma expresión.
         return total_return
 
 
