@@ -1,0 +1,9 @@
+name: bpref-dps-env
+channels:
+  - defaults
+dependencies:
+  - numpy
+  - python=3.10
+  - scipy
+  - gym
+  - pip
