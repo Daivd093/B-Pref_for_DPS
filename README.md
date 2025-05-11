@@ -12,7 +12,7 @@ Implementando un profesor simulado según las descripciones del benchmark:
 **B-Pref: Benchmarking Preference-Based Reinforcement Learning**<br/>
 *NeurIPS 2021 Datasets and Benchmarks Track*<br/>
 Kimin Lee, Laura Smith, Anca Dragan, Pieter Abbeel<br/>
-[Paper B-Pref] (https://openreview.net/pdf?id=ps95-mkHF_)
+[Paper B-Pref](https://openreview.net/pdf?id=ps95-mkHF_)
 
 ## Estructura del repositorio
 
